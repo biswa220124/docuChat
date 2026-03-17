@@ -20,7 +20,7 @@ export default function RegisterPage() {
     setError('');
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://docuchat-api-1.onrender.com';
       const res = await axios.post(`${apiUrl}/api/auth/register`, form);
       localStorage.setItem('token', res.data.token);
       navigate('/dashboard');
