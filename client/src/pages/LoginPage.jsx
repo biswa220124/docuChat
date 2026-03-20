@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import ThemeToggle from '../components/ThemeToggle';
 
 export default function LoginPage() {
@@ -8,6 +8,8 @@ export default function LoginPage() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [slowHint, setSlowHint] = useState(false);
+  const slowTimer = useRef(null);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -18,15 +20,20 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setSlowHint(false);
+
+    // If request takes >5s, likely a Render cold start — warn the user
+    slowTimer.current = setTimeout(() => setSlowHint(true), 5000);
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://docuchat-api-1.onrender.com';
-      const res = await axios.post(`${apiUrl}/api/auth/login`, form);
+      const res = await api.post('/auth/login', form);
       localStorage.setItem('token', res.data.token);
       navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed. Please try again.');
     } finally {
+      clearTimeout(slowTimer.current);
+      setSlowHint(false);
       setLoading(false);
     }
   };
@@ -57,6 +64,12 @@ export default function LoginPage() {
           {error && (
             <div className="form-error">
               <span>⚠</span> {error}
+            </div>
+          )}
+
+          {slowHint && (
+            <div className="form-hint" style={{ marginBottom: '12px', fontSize: '0.85rem', color: 'var(--text-muted, #888)', textAlign: 'center' }}>
+              ⏳ Server is waking up (free tier cold start)… please wait a moment.
             </div>
           )}
 

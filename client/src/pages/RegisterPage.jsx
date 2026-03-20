@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import ThemeToggle from '../components/ThemeToggle';
 
 export default function RegisterPage() {
@@ -20,8 +20,7 @@ export default function RegisterPage() {
     setError('');
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://docuchat-api-1.onrender.com';
-      const res = await axios.post(`${apiUrl}/api/auth/register`, form);
+      const res = await api.post('/auth/register', form);
       localStorage.setItem('token', res.data.token);
       navigate('/dashboard');
     } catch (err) {
