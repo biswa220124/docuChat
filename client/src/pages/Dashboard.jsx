@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DocumentSidebar from '../components/DocumentSidebar';
 import ChatWindow from '../components/ChatWindow';
@@ -11,6 +11,7 @@ export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef();
+  const refreshDocsRef = useRef(null);
 
   // Decode token for user info
   let userEmail = '';
@@ -42,6 +43,11 @@ export default function Dashboard() {
     if (fileRef.current) fileRef.current.click();
   };
 
+  // Called by sidebar to register its refresh function
+  const registerRefreshDocs = useCallback((fn) => {
+    refreshDocsRef.current = fn;
+  }, []);
+
   const handleUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -55,6 +61,10 @@ export default function Dashboard() {
       // Auto-select newly uploaded doc
       if (res.data?.id) {
         setSelectedDocIds([res.data.id]);
+      }
+      // Refresh sidebar document list immediately
+      if (refreshDocsRef.current) {
+        refreshDocsRef.current();
       }
     } catch (err) {
       console.error('Upload failed:', err);
@@ -83,6 +93,7 @@ export default function Dashboard() {
           onNewChat={handleNewChat}
           mobileOpen={sidebarOpen}
           onMobileClose={() => setSidebarOpen(false)}
+          registerRefreshDocs={registerRefreshDocs}
         />
         <ChatWindow
           selectedDocumentIds={selectedDocIds}

@@ -10,6 +10,7 @@ export default function DocumentSidebar({
   onNewChat,
   mobileOpen,
   onMobileClose,
+  registerRefreshDocs,
 }) {
   const [docs, setDocs] = useState([]);
   const [history, setHistory] = useState([]);
@@ -44,6 +45,13 @@ export default function DocumentSidebar({
     fetchDocs();
     fetchHistory();
   }, []);
+
+  // Register fetchDocs with parent so it can refresh after upload
+  useEffect(() => {
+    if (registerRefreshDocs) {
+      registerRefreshDocs(fetchDocs);
+    }
+  }, [registerRefreshDocs]);
 
   const handleUpload = async (e) => {
     const file = e.target.files[0];
