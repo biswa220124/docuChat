@@ -1,17 +1,46 @@
-import { useState, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import './LoginPage.css';
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ email: '', password: '' });
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [slowHint, setSlowHint] = useState(false);
   const slowTimer = useRef(null);
+
+  // Real stats from backend
+  const [stats, setStats] = useState({ totalDocs: 0, totalChats: 0, lastActivity: null });
+
+  useEffect(() => {
+    api.get('/stats')
+      .then((res) => setStats(res.data))
+      .catch(() => {}); // silently fail
+  }, []);
+
+  const timeAgo = (dateStr) => {
+    if (!dateStr) return 'recently';
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return `${mins} min ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  };
+
+  const toggleMode = () => {
+    setIsSignUp((prev) => !prev);
+    setError('');
+    setFieldErrors({});
+    setForm({ name: '', email: '', password: '' });
+  };
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -23,9 +52,11 @@ export default function LoginPage() {
 
   const validate = () => {
     const errors = {};
+    if (isSignUp && !form.name.trim()) errors.name = 'Name is required.';
     if (!form.email.trim()) errors.email = 'Email is required.';
     else if (!/\S+@\S+\.\S+/.test(form.email)) errors.email = 'Enter a valid email address.';
     if (!form.password) errors.password = 'Password is required.';
+    else if (isSignUp && form.password.length < 6) errors.password = 'Min. 6 characters required.';
     return errors;
   };
 
@@ -41,11 +72,23 @@ export default function LoginPage() {
     setSlowHint(false);
     slowTimer.current = setTimeout(() => setSlowHint(true), 5000);
     try {
-      const res = await api.post('/auth/login', form);
-      localStorage.setItem('token', res.data.token);
-      navigate('/dashboard');
+      if (isSignUp) {
+        const res = await api.post('/auth/register', form);
+        localStorage.setItem('token', res.data.token);
+        navigate('/dashboard');
+      } else {
+        const res = await api.post('/auth/login', {
+          email: form.email,
+          password: form.password,
+        });
+        localStorage.setItem('token', res.data.token);
+        navigate('/dashboard');
+      }
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please try again.');
+      setError(
+        err.response?.data?.message ||
+          (isSignUp ? 'Registration failed. Please try again.' : 'Login failed. Please try again.')
+      );
     } finally {
       clearTimeout(slowTimer.current);
       setSlowHint(false);
@@ -68,9 +111,21 @@ export default function LoginPage() {
             <span className="login-logo-text">DocuChat</span>
           </div>
 
-          {/* Heading */}
-          <h1 className="login-heading">Hello,<br />Welcome Back</h1>
-          <p className="login-subtext">Access your AI-powered documents</p>
+          {/* Heading — animated */}
+          <div className="login-heading-wrapper">
+            <h1 className="login-heading" key={isSignUp ? 'signup' : 'login'}>
+              {isSignUp ? (
+                <>Create<br />Account</>
+              ) : (
+                <>Hello,<br />Welcome Back</>
+              )}
+            </h1>
+            <p className="login-subtext" key={isSignUp ? 'sub-signup' : 'sub-login'}>
+              {isSignUp
+                ? 'Start chatting with your AI-powered documents'
+                : 'Access your AI-powered documents'}
+            </p>
+          </div>
 
           {/* Global error */}
           {error && (
@@ -84,6 +139,22 @@ export default function LoginPage() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} noValidate>
+            {/* Name — slides in for signup */}
+            <div className={`login-field login-field-animated ${isSignUp ? 'field-visible' : 'field-hidden'}`}>
+              <label htmlFor="login-name">Full Name</label>
+              <input
+                id="login-name"
+                type="text"
+                name="name"
+                placeholder="John Doe"
+                value={form.name}
+                onChange={handleChange}
+                autoComplete="name"
+                tabIndex={isSignUp ? 0 : -1}
+              />
+              {fieldErrors.name && <span className="field-error">{fieldErrors.name}</span>}
+            </div>
+
             {/* Email */}
             <div className={`login-field ${fieldErrors.email ? 'has-error' : ''}`}>
               <label htmlFor="login-email">Email</label>
@@ -101,45 +172,71 @@ export default function LoginPage() {
 
             {/* Password */}
             <div className={`login-field ${fieldErrors.password ? 'has-error' : ''}`}>
-              <label htmlFor="login-password">Password</label>
+              <label htmlFor="login-password">
+                {isSignUp ? 'Set Password' : 'Password'}
+              </label>
               <input
                 id="login-password"
                 type="password"
                 name="password"
-                placeholder="••••••••••••"
+                placeholder={isSignUp ? 'Min. 6 characters' : '••••••••••••'}
                 value={form.password}
                 onChange={handleChange}
-                autoComplete="current-password"
+                autoComplete={isSignUp ? 'new-password' : 'current-password'}
               />
               {fieldErrors.password && <span className="field-error">{fieldErrors.password}</span>}
             </div>
 
-            {/* Remember + Forgot */}
-            <div className="login-options">
-              <label className="login-remember">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={() => setRememberMe(!rememberMe)}
-                />
-                <span className="custom-checkbox"></span>
-                Remember me
-              </label>
-              <Link to="#" className="login-forgot">Forgot Password?</Link>
+            {/* Remember + Forgot — only for login */}
+            <div className={`login-options-wrapper ${isSignUp ? 'options-hidden' : 'options-visible'}`}>
+              <div className="login-options">
+                <label className="login-remember">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={() => setRememberMe(!rememberMe)}
+                    tabIndex={isSignUp ? -1 : 0}
+                  />
+                  <span className="custom-checkbox"></span>
+                  Remember me
+                </label>
+                <a href="#" className="login-forgot">Forgot Password?</a>
+              </div>
             </div>
 
             {/* Submit */}
             <button type="submit" className="login-btn" disabled={loading}>
               {loading ? (
-                <><span className="btn-spinner"></span> Signing in…</>
-              ) : 'Sign In'}
+                <><span className="btn-spinner"></span> {isSignUp ? 'Creating…' : 'Signing in…'}</>
+              ) : isSignUp ? 'Create Account' : 'Sign In'}
             </button>
           </form>
 
-          {/* Footer */}
+          {/* Footer toggle */}
           <p className="login-footer">
-            Don't have an account?{' '}
-            <Link to="/register" className="login-signup-link">Sign Up</Link>
+            {isSignUp ? (
+              <>
+                Already have an account?{' '}
+                <button
+                  type="button"
+                  className="login-toggle-link"
+                  onClick={toggleMode}
+                >
+                  Sign In
+                </button>
+              </>
+            ) : (
+              <>
+                Don't have an account?{' '}
+                <button
+                  type="button"
+                  className="login-toggle-link"
+                  onClick={toggleMode}
+                >
+                  Sign Up
+                </button>
+              </>
+            )}
           </p>
         </div>
       </div>
@@ -150,20 +247,20 @@ export default function LoginPage() {
         <div className="blob blob-1"></div>
         <div className="blob blob-2"></div>
 
-        {/* Floating chat bubbles */}
+        {/* Floating chat bubbles — real data */}
         <div className="float-card chat-card-1">
           <div className="float-avatar">🤖</div>
           <div className="float-msg">
-            <span>AI Summary Ready</span>
-            <small>Just now</small>
+            <span>{stats.totalChats} AI Chats</span>
+            <small>and counting</small>
           </div>
         </div>
 
         <div className="float-card chat-card-2">
           <div className="float-avatar doc">📄</div>
           <div className="float-msg">
-            <span>3 documents analyzed</span>
-            <small>2 min ago</small>
+            <span>{stats.totalDocs} documents analyzed</span>
+            <small>{timeAgo(stats.lastActivity)}</small>
           </div>
         </div>
 
@@ -198,17 +295,17 @@ export default function LoginPage() {
           </svg>
         </div>
 
-        {/* Stats pill */}
+        {/* Stats pill — real data */}
         <div className="float-card stats-card">
           <span className="stats-icon">⚡</span>
           <div>
-            <span className="stats-num">10k+</span>
-            <small>docs processed</small>
+            <span className="stats-num">{stats.totalDocs + stats.totalChats}</span>
+            <small>total interactions</small>
           </div>
         </div>
 
         {/* Tagline */}
-        <p className="ill-tagline">Powered by AI · Secured by design</p>
+        <p className="ill-tagline">Made with ❤️ in INDIA</p>
       </div>
     </div>
   );

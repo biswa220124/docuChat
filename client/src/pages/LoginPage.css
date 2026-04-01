@@ -1,6 +1,7 @@
 /* ===================================================
    DocuChat — LoginPage.css
    Split-screen modern SaaS login design
+   with animated Login ↔ Sign Up toggle
    =================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
@@ -63,7 +64,11 @@
   letter-spacing: -0.5px;
 }
 
-/* Headings */
+/* ── Heading with animation ── */
+.login-heading-wrapper {
+  margin-bottom: 32px;
+}
+
 .login-heading {
   font-size: 34px;
   font-weight: 800;
@@ -71,13 +76,25 @@
   line-height: 1.2;
   letter-spacing: -1px;
   margin-bottom: 8px;
+  animation: headingFadeIn 0.4s ease-out;
 }
 
 .login-subtext {
   font-size: 14px;
   color: #94a3b8;
   font-weight: 400;
-  margin-bottom: 32px;
+  animation: headingFadeIn 0.5s ease-out;
+}
+
+@keyframes headingFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Alerts */
@@ -92,6 +109,12 @@
   border-radius: 10px;
   padding: 10px 14px;
   margin-bottom: 20px;
+  animation: alertSlideIn 0.3s ease-out;
+}
+
+@keyframes alertSlideIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .login-hint {
@@ -148,12 +171,55 @@
   font-weight: 500;
 }
 
-/* ── Options Row ── */
+/* ── Animated Name Field (for sign-up toggle) ── */
+.login-field-animated {
+  overflow: hidden;
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.35s ease,
+              margin-bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.35s ease;
+}
+
+.login-field-animated.field-visible {
+  max-height: 100px;
+  opacity: 1;
+  margin-bottom: 18px;
+  transform: translateY(0);
+}
+
+.login-field-animated.field-hidden {
+  max-height: 0;
+  opacity: 0;
+  margin-bottom: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
+}
+
+/* ── Options Row (Remember + Forgot) — animated ── */
+.login-options-wrapper {
+  overflow: hidden;
+  transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.3s ease,
+              margin-bottom 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.login-options-wrapper.options-visible {
+  max-height: 50px;
+  opacity: 1;
+  margin-bottom: 24px;
+}
+
+.login-options-wrapper.options-hidden {
+  max-height: 0;
+  opacity: 0;
+  margin-bottom: 0;
+  pointer-events: none;
+}
+
 .login-options {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 24px;
 }
 
 /* Custom checkbox */
@@ -209,7 +275,7 @@
 }
 .login-forgot:hover { color: #E100FF; text-decoration: underline; }
 
-/* ── Sign In Button ── */
+/* ── Sign In / Create Account Button ── */
 .login-btn {
   width: 100%;
   padding: 13px;
@@ -267,15 +333,41 @@
   margin-top: 28px;
 }
 
-.login-signup-link {
+/* Toggle link styled as inline button */
+.login-toggle-link {
+  background: none;
+  border: none;
   color: #7F00FF;
   font-weight: 700;
-  text-decoration: none;
+  font-size: 13.5px;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  padding: 0;
   margin-left: 4px;
+  text-decoration: none;
   transition: color 0.2s;
+  position: relative;
 }
 
-.login-signup-link:hover { color: #E100FF; text-decoration: underline; }
+.login-toggle-link::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(135deg, #7F00FF, #E100FF);
+  border-radius: 1px;
+  transition: width 0.3s ease;
+}
+
+.login-toggle-link:hover {
+  color: #E100FF;
+}
+
+.login-toggle-link:hover::after {
+  width: 100%;
+}
 
 /* ===================================================
    RIGHT PANEL – Illustration

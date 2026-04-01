@@ -34,6 +34,26 @@ app.use('/api/auth', authRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/chat', chatRoutes);
 
+// Public stats for login page (no auth)
+app.get('/api/stats', async (req, res) => {
+  try {
+    const Document = require('./models/Document');
+    const Chat = require('./models/Chat');
+    const [totalDocs, totalChats, lastDoc] = await Promise.all([
+      Document.countDocuments(),
+      Chat.countDocuments(),
+      Document.findOne().sort({ createdAt: -1 }).select('createdAt').lean(),
+    ]);
+    res.json({
+      totalDocs,
+      totalChats,
+      lastActivity: lastDoc?.createdAt || null,
+    });
+  } catch {
+    res.json({ totalDocs: 0, totalChats: 0, lastActivity: null });
+  }
+});
+
 // Health check
 app.get('/', (req, res) => {
   res.json({ message: 'DocuChat API is running' });
