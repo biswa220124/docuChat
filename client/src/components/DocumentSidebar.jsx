@@ -1,13 +1,22 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '../utils/api';
+import './Sidebar.css';
 
-export default function DocumentSidebar({ selectedDocIds, onToggle, activeTab, onTabChange }) {
+export default function DocumentSidebar({
+  selectedDocIds,
+  onToggle,
+  onLogout,
+  userEmail,
+  onNewChat,
+  mobileOpen,
+  onMobileClose,
+}) {
   const [docs, setDocs] = useState([]);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
-  const [expandedChat, setExpandedChat] = useState(null);
+  const [search, setSearch] = useState('');
   const fileRef = useRef();
 
   const fetchDocs = async () => {
@@ -39,13 +48,10 @@ export default function DocumentSidebar({ selectedDocIds, onToggle, activeTab, o
   const handleUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     setUploading(true);
     setError('');
-
     const formData = new FormData();
     formData.append('pdf', file);
-
     try {
       await api.post('/documents/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -59,7 +65,8 @@ export default function DocumentSidebar({ selectedDocIds, onToggle, activeTab, o
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id, e) => {
+    e.stopPropagation();
     try {
       await api.delete(`/documents/${id}`);
       setDocs((prev) => prev.filter((d) => d.id !== id));
@@ -68,131 +75,139 @@ export default function DocumentSidebar({ selectedDocIds, onToggle, activeTab, o
     }
   };
 
-  const formatDate = (iso) => {
-    const d = new Date(iso);
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
+  // Derive username from email
+  const userName = userEmail ? userEmail.split('@')[0] : 'User';
+  const userInitial = userName[0]?.toUpperCase() || 'U';
 
-  // Skeleton rows
-  const Skeleton = () => (
-    <div className="sidebar__list">
-      {[1, 2, 3].map((i) => (
-        <div key={i} className="sidebar__doc skeleton-row">
-          <div className="skeleton-box" style={{ width: 15, height: 15, borderRadius: 3 }} />
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <div className="skeleton-box" style={{ width: '80%', height: 12, borderRadius: 4 }} />
-            <div className="skeleton-box" style={{ width: '50%', height: 10, borderRadius: 4 }} />
-          </div>
-        </div>
-      ))}
-    </div>
+  // Filter docs by search
+  const filteredDocs = docs.filter((d) =>
+    d.originalName?.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
-    <aside className="sidebar">
-      {/* Tabs */}
-      <div className="sidebar__tabs">
+    <>
+      {/* Mobile overlay */}
+      {mobileOpen && <div className="sb-overlay" onClick={onMobileClose} />}
+
+      <aside className={`dc-sidebar ${mobileOpen ? 'mobile-open' : ''}`}>
+        {/* ── Logo ── */}
+        <div className="dc-sb-logo">
+          <span className="dc-sb-logo-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+              <path d="M20 2H4a2 2 0 00-2 2v14a2 2 0 002 2h4l4 4 4-4h4a2 2 0 002-2V4a2 2 0 00-2-2z" />
+            </svg>
+          </span>
+          <span className="dc-sb-logo-text">DocuChat</span>
+        </div>
+
+        {/* ── New Chat Button ── */}
         <button
-          className={`sidebar__tab${activeTab === 'docs' ? ' active' : ''}`}
-          onClick={() => onTabChange('docs')}
+          className="dc-sb-new-btn"
+          onClick={onNewChat}
+          disabled={uploading}
         >
-          Documents
+          <span className="dc-sb-new-icon">+</span>
+          {uploading ? 'Uploading…' : 'New Chat'}
         </button>
-        <button
-          className={`sidebar__tab${activeTab === 'history' ? ' active' : ''}`}
-          onClick={() => onTabChange('history')}
-        >
-          History
-        </button>
-      </div>
 
-      {activeTab === 'docs' && (
-        <>
-          <div className="sidebar__top">
-            <label className={`sidebar__upload-btn${uploading ? ' disabled' : ''}`}>
-              {uploading ? <span className="sidebar__spinner" /> : <span>+ Upload PDF</span>}
-              <input
-                ref={fileRef}
-                type="file"
-                accept=".pdf"
-                onChange={handleUpload}
-                disabled={uploading}
-                hidden
-              />
-            </label>
-          </div>
+        {/* ── Search ── */}
+        <div className="dc-sb-search">
+          <svg className="dc-sb-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input
+            className="dc-sb-search-input"
+            placeholder="Search chats…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
 
-          {error && <p className="sidebar__error">{error}</p>}
+        {error && (
+          <div className="dc-sb-error">{error}</div>
+        )}
 
+        {/* ── History ── */}
+        <div className="dc-sb-section-label">History</div>
+
+        <div className="dc-sb-list">
           {loading ? (
-            <Skeleton />
+            <div className="dc-sb-empty">Loading…</div>
+          ) : filteredDocs.length === 0 && history.length === 0 ? (
+            <div className="dc-sb-empty">No conversations yet.</div>
           ) : (
-            <div className="sidebar__list">
-              {docs.length === 0 && (
-                <p className="sidebar__empty">No documents yet. Upload a PDF to get started.</p>
-              )}
-
-              {docs.map((doc) => (
+            <>
+              {filteredDocs.map((doc) => (
                 <div
                   key={doc.id}
-                  className={`sidebar__doc${selectedDocIds.includes(doc.id) ? ' selected' : ''}`}
-                  onClick={() => onToggle(doc.id)}
+                  className={`dc-sb-item ${selectedDocIds.includes(doc.id) ? 'active' : ''}`}
+                  onClick={() => { onToggle(doc.id); onMobileClose?.(); }}
                 >
-                  <div className="sidebar__doc-check">
-                    <input
-                      type="checkbox"
-                      checked={selectedDocIds.includes(doc.id)}
-                      onChange={() => onToggle(doc.id)}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  </div>
-                  <div className="sidebar__doc-info">
-                    <span className="sidebar__doc-name" title={doc.originalName}>
-                      {doc.originalName}
-                    </span>
-                    <span className="sidebar__doc-meta">
-                      {formatDate(doc.createdAt)} · {doc.chunkCount} chunks
-                    </span>
-                  </div>
-                  <button
-                    className="sidebar__doc-del"
-                    title="Delete"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(doc.id);
-                    }}
-                  >
-                    ✕
-                  </button>
+                  <svg className="dc-sb-item-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+                  </svg>
+                  <span className="dc-sb-item-text" title={doc.originalName}>
+                    {doc.originalName}
+                  </span>
+                  {selectedDocIds.includes(doc.id) && (
+                    <button
+                      className="dc-sb-item-del"
+                      onClick={(e) => handleDelete(doc.id, e)}
+                      title="Delete"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/>
+                      </svg>
+                    </button>
+                  )}
                 </div>
               ))}
-            </div>
-          )}
-        </>
-      )}
 
-      {activeTab === 'history' && (
-        <div className="sidebar__list">
-          {history.length === 0 && (
-            <p className="sidebar__empty">No chat history yet.</p>
-          )}
-
-          {history.map((chat) => (
-            <div key={chat._id} className="sidebar__history-item">
-              <button
-                className="sidebar__history-q"
-                onClick={() => setExpandedChat(expandedChat === chat._id ? null : chat._id)}
-              >
-                <span className="sidebar__history-q-text">{chat.question}</span>
-                <span className="sidebar__history-date">{formatDate(chat.createdAt)}</span>
-              </button>
-              {expandedChat === chat._id && (
-                <div className="sidebar__history-a">{chat.answer}</div>
+              {history.length > 0 && (
+                <>
+                  <div className="dc-sb-subsection">Recent</div>
+                  {history.slice(0, 5).map((chat) => (
+                    <div key={chat._id} className="dc-sb-item muted">
+                      <svg className="dc-sb-item-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+                      </svg>
+                      <span className="dc-sb-item-text">{chat.question}</span>
+                    </div>
+                  ))}
+                </>
               )}
-            </div>
-          ))}
+            </>
+          )}
         </div>
-      )}
-    </aside>
+
+        {/* ── Upload hidden input ── */}
+        <label className="dc-sb-upload-label">
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".pdf"
+            onChange={handleUpload}
+            disabled={uploading}
+            hidden
+          />
+        </label>
+
+        {/* ── User Profile Footer ── */}
+        <div className="dc-sb-footer">
+          <div className="dc-sb-user">
+            <div className="dc-sb-avatar">{userInitial}</div>
+            <div className="dc-sb-user-info">
+              <span className="dc-sb-user-name">{userName}</span>
+              <span className="dc-sb-user-email">{userEmail || 'user@example.com'}</span>
+            </div>
+            <button className="dc-sb-logout" onClick={onLogout} title="Log out">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </aside>
+    </>
   );
 }

@@ -1,21 +1,26 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DocumentSidebar from '../components/DocumentSidebar';
 import ChatWindow from '../components/ChatWindow';
-import ThemeToggle from '../components/ThemeToggle';
+import api from '../utils/api';
+import './Dashboard.css';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [selectedDocIds, setSelectedDocIds] = useState([]);
-  const [activeTab, setActiveTab] = useState('docs');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef();
 
-  // Try to read email from JWT payload
+  // Decode token for user info
   let userEmail = '';
+  let userName = '';
   try {
     const token = localStorage.getItem('token');
     if (token) {
       const payload = JSON.parse(atob(token.split('.')[1]));
       userEmail = payload.email || '';
+      userName = payload.name || payload.username || userEmail.split('@')[0] || 'there';
     }
   } catch {}
 
@@ -30,29 +35,62 @@ export default function Dashboard() {
     );
   };
 
-  return (
-    <div className="dash">
-      {/* Top navbar */}
-      <header className="dash-nav">
-        <span className="dash-nav__logo">DocuChat</span>
-        <span className="dash-nav__email">{userEmail}</span>
-        <div className="dash-nav__right">
-          <ThemeToggle />
-          <button className="dash-nav__logout" onClick={handleLogout}>
-            Log out
-          </button>
-        </div>
-      </header>
+  const handleNewChat = () => {
+    setSelectedDocIds([]);
+    setSidebarOpen(false);
+    // Trigger file input from sidebar
+    if (fileRef.current) fileRef.current.click();
+  };
 
-      {/* Body */}
-      <div className="dash-body">
+  const handleUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('pdf', file);
+    try {
+      const res = await api.post('/documents/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      // Auto-select newly uploaded doc
+      if (res.data?.id) {
+        setSelectedDocIds([res.data.id]);
+      }
+    } catch (err) {
+      console.error('Upload failed:', err);
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  };
+
+  return (
+    <div className="dc-app">
+      {/* Mobile header bar */}
+      <div className="dc-mobile-bar">
+        <button className="dc-hamburger" onClick={() => setSidebarOpen(true)}>
+          <span /><span /><span />
+        </button>
+        <span className="dc-mobile-logo">DocuChat</span>
+      </div>
+
+      <div className="dc-layout">
         <DocumentSidebar
           selectedDocIds={selectedDocIds}
           onToggle={toggleDoc}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
+          onLogout={handleLogout}
+          userEmail={userEmail}
+          onNewChat={handleNewChat}
+          mobileOpen={sidebarOpen}
+          onMobileClose={() => setSidebarOpen(false)}
         />
-        <ChatWindow selectedDocumentIds={selectedDocIds} />
+        <ChatWindow
+          selectedDocumentIds={selectedDocIds}
+          userName={userName}
+          fileRef={fileRef}
+          onUpload={handleUpload}
+          uploading={uploading}
+        />
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../utils/api';
-import ThemeToggle from '../components/ThemeToggle';
+import '../auth-responsive.css';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -31,41 +31,34 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="auth-page">
-      <ThemeToggle />
+    <div className="auth-modern-wrapper">
+      <div className="auth-header-text">
+        <h1>Register Page</h1>
+        <p>Designed with adobe XD</p>
+      </div>
 
-      <div className="auth-card">
-        {/* Left gradient hero */}
-        <div className="auth-card__hero">
-          <div className="hero__content">
-            <div className="hero__logo">DocuChat</div>
-            <p className="hero__tagline">
-              Chat with your documents using AI.<br />
-              Upload, ask, and get instant answers.
-            </p>
+      <div className="auth-modern-card">
+        <div className="auth-modern-left">
+          <div className="auth-modern-logo">Logo</div>
+          <div className="auth-modern-illustration">
+            <img src="https://placehold.co/400x320/e2e8f0/1e293b?text=Security+Illustration" alt="Register Illustration" />
           </div>
         </div>
 
-        {/* Right form panel */}
-        <div className="auth-card__form">
-          <div className="form__header">
-            <h2 className="form__title">Create account</h2>
-            <p className="form__subtitle">Start chatting with your documents</p>
-          </div>
+        <div className="auth-modern-right">
+          <h2 className="auth-modern-title">Create Account</h2>
+          <p className="auth-modern-subtitle">Start chatting with your documents</p>
 
-          {error && (
-            <div className="form-error">
-              <span>⚠</span> {error}
-            </div>
-          )}
+          {error && <div style={{color:'#dc2626', fontSize:'13px', marginBottom:'16px'}}>⚠ {error}</div>}
 
           <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label htmlFor="register-name">Name</label>
+            <div className="auth-modern-group">
+              <span className="auth-modern-icon">👤</span>
               <input
                 id="register-name"
                 type="text"
                 name="name"
+                className="auth-modern-input"
                 placeholder="John Doe"
                 value={form.name}
                 onChange={handleChange}
@@ -74,12 +67,13 @@ export default function RegisterPage() {
               />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="register-email">Email</label>
+            <div className="auth-modern-group">
+              <span className="auth-modern-icon">✉️</span>
               <input
                 id="register-email"
                 type="email"
                 name="email"
+                className="auth-modern-input"
                 placeholder="you@example.com"
                 value={form.email}
                 onChange={handleChange}
@@ -88,12 +82,13 @@ export default function RegisterPage() {
               />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="register-password">Password</label>
+            <div className="auth-modern-group">
+              <span className="auth-modern-icon">🔒</span>
               <input
                 id="register-password"
                 type="password"
                 name="password"
+                className="auth-modern-input"
                 placeholder="Min. 6 characters"
                 value={form.password}
                 onChange={handleChange}
@@ -103,14 +98,21 @@ export default function RegisterPage() {
               />
             </div>
 
-            <button type="submit" className="btn-submit" disabled={loading}>
-              {loading ? <span className="spinner" /> : 'Create Account'}
+            <button type="submit" className="auth-modern-btn" disabled={loading}>
+              {loading ? 'Wait...' : 'Create Account'}
             </button>
           </form>
 
-          <p className="form__footer">
+          <div className="auth-modern-register">
             Already have an account? <Link to="/login">Sign in</Link>
-          </p>
+          </div>
+
+          <div className="auth-modern-footer">
+            <div>Copyright Reserved @2021</div>
+            <div className="auth-modern-footer-links">
+              <span>Terms and Conditions</span> | <span>Privacy Policy</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
