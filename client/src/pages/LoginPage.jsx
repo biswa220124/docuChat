@@ -68,7 +68,9 @@ export default function LoginPage() {
       localStorage.setItem('token', res.data.token);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.message || (isSignUp ? 'Registration failed.' : 'Login failed.'));
+      const respError = err.response?.data?.message || err.response?.data?.error;
+      const netError = err.message === 'Network Error' ? 'Cannot connect to server. Please try again.' : err.message;
+      setError(respError || netError || (isSignUp ? 'Registration failed.' : 'Login failed.'));
     } finally {
       clearTimeout(slowTimer.current);
       setSlowHint(false);

@@ -17,7 +17,7 @@ app.use(cors({
     // Allow requests with no origin (mobile apps, curl, Postman)
     if (!origin) return callback(null, true);
     const allowed = process.env.FRONTEND_URL
-      ? [process.env.FRONTEND_URL, 'http://localhost:5173', 'http://localhost:3000']
+      ? [process.env.FRONTEND_URL, 'http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173', 'http://127.0.0.1:3000']
       : true; // allow all if not set
     if (allowed === true || allowed.includes(origin)) {
       callback(null, true);
