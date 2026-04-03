@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import DocumentSidebar from '../components/DocumentSidebar';
 import ChatWindow from '../components/ChatWindow';
 import api from '../utils/api';
-import './Dashboard.css';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -13,7 +12,6 @@ export default function Dashboard() {
   const fileRef = useRef();
   const refreshDocsRef = useRef(null);
 
-  // Decode token for user info
   let userEmail = '';
   let userName = '';
   try {
@@ -39,11 +37,9 @@ export default function Dashboard() {
   const handleNewChat = () => {
     setSelectedDocIds([]);
     setSidebarOpen(false);
-    // Trigger file input from sidebar
     if (fileRef.current) fileRef.current.click();
   };
 
-  // Called by sidebar to register its refresh function
   const registerRefreshDocs = useCallback((fn) => {
     refreshDocsRef.current = fn;
   }, []);
@@ -58,14 +54,8 @@ export default function Dashboard() {
       const res = await api.post('/documents/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      // Auto-select newly uploaded doc
-      if (res.data?.id) {
-        setSelectedDocIds([res.data.id]);
-      }
-      // Refresh sidebar document list immediately
-      if (refreshDocsRef.current) {
-        refreshDocsRef.current();
-      }
+      if (res.data?.id) setSelectedDocIds([res.data.id]);
+      if (refreshDocsRef.current) refreshDocsRef.current();
     } catch (err) {
       console.error('Upload failed:', err);
     } finally {
@@ -75,16 +65,20 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="dc-app">
+    <div className="flex flex-col w-screen h-dvh overflow-hidden font-sans bg-gradient-to-br from-brand-50 via-brand-100 to-purple-50">
       {/* Mobile header bar */}
-      <div className="dc-mobile-bar">
-        <button className="dc-hamburger" onClick={() => setSidebarOpen(true)}>
-          <span /><span /><span />
+      <div className="hidden max-md:flex items-center gap-3.5 px-4 py-3 bg-white/75 backdrop-blur-xl border-b border-brand-700/10 z-50">
+        <button className="bg-transparent border-none cursor-pointer flex flex-col gap-[5px] p-1" onClick={() => setSidebarOpen(true)}>
+          <span className="block w-[22px] h-0.5 bg-brand-700 rounded-full transition-transform" />
+          <span className="block w-[22px] h-0.5 bg-brand-700 rounded-full transition-transform" />
+          <span className="block w-[22px] h-0.5 bg-brand-700 rounded-full transition-transform" />
         </button>
-        <span className="dc-mobile-logo">DocuChat</span>
+        <span className="text-[17px] font-extrabold bg-gradient-to-br from-brand-700 to-accent bg-clip-text text-transparent">
+          DocuChat
+        </span>
       </div>
 
-      <div className="dc-layout">
+      <div className="flex flex-1 overflow-hidden max-md:flex-col">
         <DocumentSidebar
           selectedDocIds={selectedDocIds}
           onToggle={toggleDoc}
