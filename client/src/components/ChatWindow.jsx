@@ -293,7 +293,7 @@ export default function ChatWindow({
 
   const readSSEStream = useCallback(async (question) => {
     const token = localStorage.getItem('token');
-    const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+    const baseURL = api.defaults.baseURL;
 
     // Abort any previous in-flight stream
     streamAbortRef.current?.abort();
