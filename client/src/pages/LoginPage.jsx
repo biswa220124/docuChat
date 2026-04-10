@@ -275,7 +275,7 @@ export default function LoginPage() {
           ════════════════════════════════════════════════ */}
       <div
         ref={leftPanelRef}
-        className="relative flex-shrink-0 overflow-y-auto overflow-x-hidden"
+        className={`relative flex-shrink-0 overflow-y-auto overflow-x-hidden ${isSplit ? 'max-md:hidden' : ''}`}
         style={{
           width: isSplit ? '50%' : '100%',
           transition: 'width 0.85s cubic-bezier(0.77,0,0.175,1)',
@@ -287,7 +287,7 @@ export default function LoginPage() {
 
         {/* ── Sticky Nav (glass on scroll) ── */}
         <header
-          className="sticky top-0 z-30 flex items-center justify-between px-8 lg:px-14 py-4 transition-all duration-300"
+          className="sticky top-0 z-30 flex items-center justify-between px-4 sm:px-8 lg:px-14 py-4 transition-all duration-300"
           style={{
             background: scrolled ? 'rgba(0,0,0,0.45)' : 'transparent',
             backdropFilter: scrolled ? 'blur(20px) saturate(180%)' : 'none',
@@ -327,7 +327,7 @@ export default function LoginPage() {
         <div className="relative z-10">
 
           {/* ── HERO SECTION ── */}
-          <section className="min-h-[calc(100dvh-72px)] flex flex-col justify-between px-8 lg:px-14 py-10">
+          <section className="min-h-[calc(100dvh-72px)] flex flex-col justify-between px-4 sm:px-8 lg:px-14 py-6 sm:py-10">
 
             {/* Quote */}
             <div>
@@ -342,7 +342,7 @@ export default function LoginPage() {
                   transition: 'opacity 0.5s ease, transform 0.5s ease',
                 }}
               >
-                <p className={`text-white font-serif italic leading-relaxed opacity-85 transition-all duration-700 ${isSplit ? 'text-base max-w-xs' : 'text-xl lg:text-2xl max-w-lg'}`}>
+                <p className={`text-white font-serif italic leading-relaxed opacity-85 transition-all duration-700 ${isSplit ? 'text-base max-w-xs' : 'text-base sm:text-xl lg:text-2xl max-w-lg'}`}>
                   {QUOTES[quoteIndex].text}
                 </p>
                 <p className="text-white/40 font-label text-xs mt-2 tracking-wide">{QUOTES[quoteIndex].author}</p>
@@ -363,7 +363,7 @@ export default function LoginPage() {
 
             {/* Main Headline */}
             <div className="my-6">
-              <h1 className={`text-white font-serif leading-[1.05] transition-all duration-700 mb-3 ${isSplit ? 'text-4xl' : 'text-6xl lg:text-8xl'}`}>
+              <h1 className={`text-white font-serif leading-[1.05] transition-all duration-700 mb-3 ${isSplit ? 'text-4xl' : 'text-4xl sm:text-6xl lg:text-8xl'}`}>
                 Unlock Your<br />Documents'<br />Potential
               </h1>
 
@@ -585,7 +585,7 @@ export default function LoginPage() {
 
           {/* ── BOTTOM CTA BANNER (landing only) ── */}
           {!isSplit && (
-            <section className="px-8 lg:px-14 py-16">
+            <section className="px-4 sm:px-8 lg:px-14 py-10 sm:py-16">
               <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-3xl p-10 text-center">
                 <h2 className="text-white font-serif text-4xl lg:text-5xl mb-4">Ready to get started?</h2>
                 <p className="text-white/60 font-body text-base mb-8 max-w-md mx-auto">Join thousands of users who are already unlocking insights from their documents with AI.</p>
@@ -617,7 +617,7 @@ export default function LoginPage() {
           RIGHT — Auth Form Panel
           ════════════════════════════════════════════════ */}
       <div
-        className="relative flex-shrink-0 bg-surface-container-lowest overflow-y-auto"
+        className={`relative flex-shrink-0 bg-surface-container-lowest overflow-y-auto ${isSplit ? 'max-md:!w-full' : ''}`}
         style={{
           width: isSplit ? '50%' : '0%',
           opacity: isSplit ? 1 : 0,
@@ -626,7 +626,7 @@ export default function LoginPage() {
         }}
       >
         {formMounted && splitMode && (
-          <div className="w-full flex flex-col items-center min-h-full justify-center px-8 lg:px-16 py-12">
+          <div className="w-full flex flex-col items-center min-h-full justify-center px-5 sm:px-8 lg:px-16 py-8 sm:py-12">
             <div className="w-full max-w-md flex flex-col gap-6">
 
               {/* Header */}

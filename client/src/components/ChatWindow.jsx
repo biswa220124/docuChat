@@ -520,7 +520,7 @@ export default function ChatWindow({
                 {!twDone && <span className="inline-block w-0.5 h-[1.1em] bg-[#3d9e7a] ml-0.5 align-middle" style={{ animation: 'blink 0.8s step-end infinite' }} />}
               </span>
             </div>
-            <h1 className={`text-4xl sm:text-5xl font-bold tracking-tight text-center mb-2 ${isDark ? 'text-white' : 'text-[#111]'}`} style={SG}>
+            <h1 className={`text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-center mb-2 mt-4 md:mt-0 ${isDark ? 'text-white' : 'text-[#111]'}`} style={SG}>
               What will you{' '}
               <span className={`bg-gradient-to-b bg-clip-text text-transparent italic ${
                 isDark
@@ -529,7 +529,7 @@ export default function ChatWindow({
               }`}>ask</span>
               {' '}today?
             </h1>
-            <p className={`text-base font-medium text-center mb-10 max-w-md ${isDark ? 'text-[#6a7a6f]' : 'text-[#5a7a6a]'}`}>
+            <p className={`text-sm sm:text-base font-medium text-center mb-6 sm:mb-10 max-w-md ${isDark ? 'text-[#6a7a6f]' : 'text-[#5a7a6a]'}`}>
               Upload a document and unlock deep AI-powered answers from your files.
             </p>
             {selectedDocumentIds.length > 0 && (
@@ -618,13 +618,13 @@ export default function ChatWindow({
             {messages.map((msg, i) => (
               <div key={i} style={{ animation: 'fadeInUp 0.25s ease both' }}>
                 {msg.role === 'user' ? (
-                  <div className="flex justify-end px-5 sm:px-10 mb-8">
-                    <div className={`max-w-[75%] rounded-3xl rounded-tr-sm px-5 py-3.5 text-[15px] leading-relaxed ${T.userBubble}`}>
+                  <div className="flex justify-end px-4 sm:px-5 md:px-10 mb-6 sm:mb-8">
+                    <div className={`max-w-[85%] md:max-w-[75%] rounded-3xl rounded-tr-sm px-5 py-3.5 text-[14px] sm:text-[15px] leading-relaxed ${T.userBubble}`}>
                       {msg.text}
                     </div>
                   </div>
                 ) : (
-                  <div className="flex gap-4 px-5 sm:px-10 mb-8">
+                  <div className="flex gap-3 sm:gap-4 px-4 sm:px-5 md:px-10 mb-6 sm:mb-8">
                     <div className={`w-7 h-7 rounded-full shrink-0 border flex items-center justify-center text-[10px] font-bold mt-0.5 ${T.aiAvatar}`} style={SG}>DC</div>
                     <div className="flex-1 min-w-0 pt-0.5">
                       <MarkdownText text={msg.text} isDark={isDark} />
@@ -668,7 +668,7 @@ export default function ChatWindow({
 
             {/* Streaming */}
             {isStreaming && (
-              <div className="flex gap-4 px-5 sm:px-10 mb-8" style={{ animation: 'fadeInUp 0.2s ease both' }}>
+              <div className="flex gap-3 sm:gap-4 px-4 sm:px-5 md:px-10 mb-6 sm:mb-8" style={{ animation: 'fadeInUp 0.2s ease both' }}>
                 <div className={`w-7 h-7 rounded-full shrink-0 border flex items-center justify-center text-[10px] font-bold mt-0.5 ${T.aiAvatar}`} style={SG}>DC</div>
                 <div className="flex-1 min-w-0 pt-0.5">
                   <MarkdownText text={streamText} isDark={isDark} />
@@ -680,7 +680,7 @@ export default function ChatWindow({
 
             {/* Loading dots */}
             {loading && !isStreaming && (
-              <div className="flex gap-4 px-5 sm:px-10 mb-8" style={{ animation: 'fadeInUp 0.2s ease both' }}>
+              <div className="flex gap-3 sm:gap-4 px-4 sm:px-5 md:px-10 mb-6 sm:mb-8" style={{ animation: 'fadeInUp 0.2s ease both' }}>
                 <div className={`w-7 h-7 rounded-full shrink-0 border flex items-center justify-center text-[10px] font-bold mt-0.5 ${T.aiAvatar}`} style={SG}>DC</div>
                 <div className="pt-2 flex items-center gap-1.5">
                   <span className={`block w-2 h-2 rounded-full animate-bounce-dot ${T.dot}`} />
@@ -693,7 +693,7 @@ export default function ChatWindow({
           </div>
 
           {/* Input bar */}
-          <div className={`px-5 sm:px-10 pb-5 pt-2 shrink-0 ${T.chatBg}`}>
+          <div className={`px-4 sm:px-5 md:px-10 pb-4 pt-2 shrink-0 ${T.chatBg}`}>
             <InputArea inChat />
             <p className={`text-[10px] text-center mt-2 ${T.disclaimer}`}>DocuChat can make mistakes. Verify important information.</p>
           </div>

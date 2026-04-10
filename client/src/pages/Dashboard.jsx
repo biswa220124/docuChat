@@ -73,22 +73,32 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex w-screen h-dvh overflow-hidden" style={{ background: theme === 'dark' ? '#0f0f0f' : '#ffffff' }}>
+    <div className="flex w-screen h-dvh overflow-hidden relative" style={{ background: theme === 'dark' ? '#0f0f0f' : '#ffffff' }}>
 
       {/* First-time theme onboarding */}
       {showGuide && <ThemeGuide onSelect={handleSelectTheme} />}
 
-      <DocumentSidebar
-        isOpen={sidebarOpen}
-        onToggle={() => setSidebarOpen(o => !o)}
-        theme={theme}
-        selectedDocIds={selectedDocIds}
-        onSelectDoc={toggleDoc}
-        onLogout={handleLogout}
-        userEmail={userEmail}
-        onNewChat={handleNewChat}
-        registerRefreshDocs={registerRefreshDocs}
-      />
+      {/* Mobile sidebar backdrop */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      <div className={`${sidebarOpen ? 'max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-40' : ''}`}>
+        <DocumentSidebar
+          isOpen={sidebarOpen}
+          onToggle={() => setSidebarOpen(o => !o)}
+          theme={theme}
+          selectedDocIds={selectedDocIds}
+          onSelectDoc={toggleDoc}
+          onLogout={handleLogout}
+          userEmail={userEmail}
+          onNewChat={handleNewChat}
+          registerRefreshDocs={registerRefreshDocs}
+        />
+      </div>
 
       <ChatWindow
         selectedDocumentIds={selectedDocIds}

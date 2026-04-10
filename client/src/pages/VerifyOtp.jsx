@@ -131,7 +131,7 @@ export default function VerifyOtp() {
       {/* ═══════════════════════════════════════════════════
           LEFT — Liquid Hero Panel (matches LoginPage)
           ═══════════════════════════════════════════════════ */}
-      <div className="relative flex-shrink-0 overflow-hidden" style={{ width: '50%' }}>
+      <div className="relative flex-shrink-0 overflow-hidden max-md:hidden" style={{ width: '50%' }}>
         {/* Animated liquid background */}
         <div className="absolute inset-0 pointer-events-none z-0 liquid-bg" />
         <div className="absolute inset-0 pointer-events-none z-0 bg-black/45" />
@@ -208,7 +208,7 @@ export default function VerifyOtp() {
       {/* ═══════════════════════════════════════════════════
           RIGHT — OTP Entry Panel
           ═══════════════════════════════════════════════════ */}
-      <div className="flex-1 flex items-center justify-center bg-surface px-6 py-10 overflow-y-auto">
+      <div className="flex-1 flex items-center justify-center bg-surface px-4 sm:px-6 py-8 sm:py-10 overflow-y-auto max-md:w-full">
         <div className="w-full max-w-md flex flex-col gap-6">
 
           {/* Header */}
@@ -258,7 +258,7 @@ export default function VerifyOtp() {
                   onKeyDown={e => handleKeyDown(i, e)}
                   disabled={loading || !!success}
                   className={`
-                    w-[56px] h-[64px] text-center text-2xl font-bold rounded-xl border-[2px] outline-none
+                    w-[48px] h-[56px] sm:w-[56px] sm:h-[64px] text-center text-xl sm:text-2xl font-bold rounded-xl border-[2px] outline-none
                     transition-all duration-200 bg-surface-container-low
                     ${digit
                       ? 'border-primary bg-primary/5 text-on-surface shadow-md shadow-primary/10 otp-digit-pop'
