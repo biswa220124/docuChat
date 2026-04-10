@@ -74,7 +74,13 @@ async function sendOtpEmail(to, otp, name) {
     html,
   };
 
-  await transporter.sendMail(mailOptions);
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('OTP SENT SUCCESS to:', to);
+  } catch (error) {
+    console.log('OTP ERROR:', error.message || error);
+    throw error; // re-throw so auth route returns 500
+  }
 }
 
 module.exports = { sendOtpEmail };
