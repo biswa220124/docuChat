@@ -1,243 +1,491 @@
 import { useState, useEffect, useRef } from 'react';
+import { PanelLeftClose, RefreshCw, Settings, HelpCircle, LogOut,
+         Search, FileText, MessageSquare, Trash2, ChevronRight,
+         Mail, Edit3, Check, X, UserMinus, AlertTriangle } from 'lucide-react';
 import api from '../utils/api';
 
+const SG = { fontFamily: "'Space Grotesk', sans-serif" };
+
+/* ─── Sidebar theme tokens ─── */
+const DS = {
+  dark: {
+    bg:          'bg-[#111113]',
+    border:      'border-white/[0.07]',
+    title:       'text-white',
+    iconBtn:     'text-white/50 hover:text-white hover:bg-white/8',
+    navBtn:      'text-white/70 hover:text-white hover:bg-white/8',
+    divider:     'bg-white/[0.08]',
+    searchBg:    'bg-white/[0.06] border-white/[0.08]',
+    searchText:  'text-white placeholder-white/30',
+    searchFocus: 'focus:border-white/20',
+    secLabel:    'text-white/30',
+    docActive:   'bg-white/12 text-white',
+    docIdle:     'text-white/60 hover:bg-white/[0.06] hover:text-white/90',
+    histItem:    'text-white/50 hover:text-white/80 hover:bg-white/[0.04]',
+    footerBorder:'border-white/[0.08]',
+    userName:    'text-white',
+    userEmail:   'text-white/40',
+    logoutBtn:   'text-white/40 hover:text-red-400 hover:bg-red-400/10',
+    deleteBtn:   'text-white/30 hover:text-red-400 hover:bg-red-400/8',
+    modalBg:     'bg-[#18181b] border-white/[0.1]',
+    modalTitle:  'text-white',
+    inputBg:     'bg-white/[0.06] border-white/[0.1] text-white placeholder-white/30',
+    inputFocus:  'focus:border-[#3d9e7a]/60',
+    labelText:   'text-white/50',
+    dimText:     'text-white/40',
+    hintText:    'text-white/25',
+    errorBg:     'bg-red-500/10 border-red-500/20 text-red-400',
+    ctxMenu:     'bg-[#1e1e22] border-white/[0.1] shadow-[0_8px_32px_rgba(0,0,0,0.6)]',
+    ctxItem:     'text-white/80 hover:text-white hover:bg-white/[0.06]',
+    ctxDanger:   'text-red-400/90 hover:text-red-400 hover:bg-red-400/8',
+    ctxDivider:  'bg-white/[0.08]',
+  },
+  light: {
+    bg:          'bg-[#f5f5f5]',
+    border:      'border-black/[0.07]',
+    title:       'text-[#111]',
+    iconBtn:     'text-[#aaa] hover:text-[#111] hover:bg-black/[0.05]',
+    navBtn:      'text-[#555] hover:text-[#111] hover:bg-black/[0.05]',
+    divider:     'bg-black/[0.07]',
+    searchBg:    'bg-white border-black/[0.1]',
+    searchText:  'text-[#111] placeholder-[#bbb]',
+    searchFocus: 'focus:border-black/25',
+    secLabel:    'text-[#bbb]',
+    docActive:   'bg-black/[0.08] text-[#111]',
+    docIdle:     'text-[#666] hover:bg-black/[0.04] hover:text-[#111]',
+    histItem:    'text-[#aaa] hover:text-[#555] hover:bg-black/[0.03]',
+    footerBorder:'border-black/[0.07]',
+    userName:    'text-[#111]',
+    userEmail:   'text-[#999]',
+    logoutBtn:   'text-[#bbb] hover:text-red-500 hover:bg-red-500/10',
+    deleteBtn:   'text-[#ccc] hover:text-red-500 hover:bg-red-500/8',
+    modalBg:     'bg-white border-black/[0.1]',
+    modalTitle:  'text-[#111]',
+    inputBg:     'bg-[#f4f4f4] border-black/[0.1] text-[#111] placeholder-[#bbb]',
+    inputFocus:  'focus:border-[#3d9e7a]/50',
+    labelText:   'text-[#888]',
+    dimText:     'text-[#aaa]',
+    hintText:    'text-[#ccc]',
+    errorBg:     'bg-red-50 border-red-200 text-red-500',
+    ctxMenu:     'bg-white border-black/[0.1] shadow-[0_8px_32px_rgba(0,0,0,0.15)]',
+    ctxItem:     'text-[#444] hover:text-[#111] hover:bg-black/[0.04]',
+    ctxDanger:   'text-red-500/90 hover:text-red-600 hover:bg-red-50',
+    ctxDivider:  'bg-black/[0.07]',
+  },
+};
+
 export default function DocumentSidebar({
-  selectedDocIds,
-  onToggle,
-  onLogout,
-  userEmail,
-  onNewChat,
-  mobileOpen,
-  onMobileClose,
-  registerRefreshDocs,
+  isOpen, onToggle, theme,
+  selectedDocIds, onSelectDoc,
+  onLogout, userEmail, onNewChat, registerRefreshDocs,
 }) {
-  const [docs, setDocs] = useState([]);
+  const [docs, setDocs]       = useState([]);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState('');
-  const [search, setSearch] = useState('');
-  const fileRef = useRef();
+  const [search, setSearch]   = useState('');
+
+  const [showSettings, setShowSettings]         = useState(false);
+  const [showHelp, setShowHelp]                 = useState(false);
+  const [showDeleteAccount, setShowDeleteAccount] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deletingAccount, setDeletingAccount]   = useState(false);
+
+  const [nickname, setNickname] = useState(() => localStorage.getItem('dc_nickname') || '');
+  const [nickEdit, setNickEdit] = useState('');
+  const [nickSaved, setNickSaved] = useState(false);
+
+  /* Context menu */
+  const [ctxMenu, setCtxMenu] = useState(null); // { x, y, doc }
+  const [renamingId, setRenamingId]   = useState(null);
+  const [renameValue, setRenameValue] = useState('');
+  const renameRef = useRef(null);
+
+  const S      = DS[theme] || DS.dark;
+  const isDark = theme === 'dark';
 
   const fetchDocs = async () => {
     setLoading(true);
-    try {
-      const res = await api.get('/documents');
-      setDocs(res.data);
-    } catch {
-      console.error('Failed to fetch documents');
-    } finally {
-      setLoading(false);
-    }
+    try { const r = await api.get('/documents'); setDocs(r.data); } catch { /* silent */ }
+    finally { setLoading(false); }
   };
-
   const fetchHistory = async () => {
-    try {
-      const res = await api.get('/chat/history');
-      setHistory(res.data);
-    } catch {
-      console.error('Failed to fetch history');
-    }
+    try { const r = await api.get('/chat/history'); setHistory(r.data); } catch { /* silent */ }
   };
 
+  useEffect(() => { fetchDocs(); fetchHistory(); }, []);
+  useEffect(() => { if (registerRefreshDocs) registerRefreshDocs(fetchDocs); }, [registerRefreshDocs]);
+
+  /* Close context menu on any click */
   useEffect(() => {
-    fetchDocs();
-    fetchHistory();
+    const handler = (e) => {
+      if (!e.target.closest('[data-ctx-menu]')) setCtxMenu(null);
+    };
+    window.addEventListener('mousedown', handler);
+    return () => window.removeEventListener('mousedown', handler);
   }, []);
 
+  /* Focus rename input when it appears */
   useEffect(() => {
-    if (registerRefreshDocs) registerRefreshDocs(fetchDocs);
-  }, [registerRefreshDocs]);
+    if (renamingId && renameRef.current) renameRef.current.focus();
+  }, [renamingId]);
 
-  const handleUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    setUploading(true);
-    setError('');
-    const formData = new FormData();
-    formData.append('pdf', file);
-    try {
-      await api.post('/documents/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      await fetchDocs();
-    } catch (err) {
-      setError(err.response?.data?.message || 'Upload failed');
-    } finally {
-      setUploading(false);
-      if (fileRef.current) fileRef.current.value = '';
-    }
-  };
-
-  const handleDelete = async (id, e) => {
+  /* ── Context menu actions ── */
+  const openCtxMenu = (e, doc) => {
+    e.preventDefault();
     e.stopPropagation();
+    setCtxMenu({ x: e.clientX, y: e.clientY, doc });
+  };
+
+  const startRename = (doc) => {
+    setCtxMenu(null);
+    setRenamingId(doc.id);
+    setRenameValue(doc.originalName?.replace(/\.pdf$/i, '') || '');
+  };
+
+  const commitRename = async (docId) => {
+    const newName = renameValue.trim();
+    if (!newName) { setRenamingId(null); return; }
+    const fullName = newName.endsWith('.pdf') ? newName : newName + '.pdf';
     try {
-      await api.delete(`/documents/${id}`);
-      setDocs((prev) => prev.filter((d) => d.id !== id));
+      await api.patch(`/documents/${docId}`, { name: fullName });
+      setDocs(p => p.map(d => d.id === docId ? { ...d, originalName: fullName } : d));
+    } catch { /* show err if needed */ }
+    setRenamingId(null);
+  };
+
+  const handleDelete = async (id) => {
+    setCtxMenu(null);
+    try { await api.delete(`/documents/${id}`); setDocs(p => p.filter(d => d.id !== id)); } catch { /* silent */ }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== 'DELETE') return;
+    setDeletingAccount(true);
+    try {
+      await api.delete('/auth/account');
+      localStorage.clear();
+      window.location.href = '/login';
     } catch {
-      console.error('Delete failed');
+      alert('Failed to delete account. Please try again.');
+      setDeletingAccount(false);
     }
   };
 
-  const userName = userEmail ? userEmail.split('@')[0] : 'User';
-  const userInitial = userName[0]?.toUpperCase() || 'U';
-  const filteredDocs = docs.filter((d) =>
-    d.originalName?.toLowerCase().includes(search.toLowerCase())
+  const saveNickname = () => {
+    const val = nickEdit.trim();
+    localStorage.setItem('dc_nickname', val);
+    setNickname(val);
+    setNickSaved(true);
+    setTimeout(() => setNickSaved(false), 2000);
+  };
+
+  const displayName = userEmail ? userEmail.split('@')[0] : 'User';
+  const userInitial = (nickname || displayName)[0]?.toUpperCase() || 'U';
+  const filtered    = docs.filter(d => d.originalName?.toLowerCase().includes(search.toLowerCase()));
+
+  const now = Date.now();
+  const grouped = history.reduce((acc, chat) => {
+    const age = now - new Date(chat.createdAt || now).getTime();
+    const k = age < 86400000 ? 'Today' : age < 172800000 ? 'Yesterday' : age < 604800000 ? 'This Week' : 'Older';
+    (acc[k] = acc[k] || []).push(chat);
+    return acc;
+  }, {});
+
+  /* ─── Modal ─── */
+  const Modal = ({ title, onClose, children }) => (
+    <>
+      <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[70] w-[340px] border rounded-2xl shadow-2xl p-6 ${S.modalBg}`} style={SG}>
+        <div className="flex items-center justify-between mb-5">
+          <h2 className={`font-semibold text-base ${S.modalTitle}`}>{title}</h2>
+          <button onClick={onClose}
+            className={`w-7 h-7 flex items-center justify-center rounded-lg bg-transparent border-none cursor-pointer transition-all ${S.iconBtn}`}>
+            <X size={15} />
+          </button>
+        </div>
+        {children}
+      </div>
+    </>
   );
 
   return (
     <>
-      {/* Mobile overlay */}
-      {mobileOpen && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 md:hidden" onClick={onMobileClose} />
-      )}
-
-      <aside className={`
-        w-[270px] shrink-0 flex flex-col bg-white/80 backdrop-blur-xl border-r border-brand-100
-        transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
-        max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-50 max-md:w-[280px] max-md:shadow-2xl max-md:shadow-black/20
-        ${mobileOpen ? 'max-md:translate-x-0' : 'max-md:-translate-x-full'}
-      `}>
-        {/* Logo */}
-        <div className="flex items-center gap-2 px-5 pt-5 pb-4">
-          <span className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-brand-700 to-accent rounded-lg shadow-md shadow-brand-700/30">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
-              <path d="M20 2H4a2 2 0 00-2 2v14a2 2 0 002 2h4l4 4 4-4h4a2 2 0 002-2V4a2 2 0 00-2-2z" />
-            </svg>
-          </span>
-          <span className="text-[17px] font-extrabold bg-gradient-to-br from-brand-700 to-accent bg-clip-text text-transparent">DocuChat</span>
-        </div>
-
-        {/* New Chat Button */}
-        <div className="px-4 mb-3">
+      {/* ── Context Menu ── */}
+      {ctxMenu && (
+        <div data-ctx-menu
+          className={`fixed z-[100] w-48 rounded-xl border py-1.5 overflow-hidden ${S.ctxMenu}`}
+          style={{ left: Math.min(ctxMenu.x, window.innerWidth - 200), top: Math.min(ctxMenu.y, window.innerHeight - 120) }}
+        >
           <button
-            className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-gradient-to-br from-brand-700 to-accent text-white text-sm font-bold shadow-md shadow-brand-700/30 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-brand-700/40 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed"
-            onClick={onNewChat}
-            disabled={uploading}
+            onClick={() => startRename(ctxMenu.doc)}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 text-[13px] font-medium bg-transparent border-none cursor-pointer text-left transition-all ${S.ctxItem}`}
           >
-            <span className="text-lg leading-none">+</span>
-            {uploading ? 'Uploading…' : 'New Chat'}
+            <Edit3 size={13} />
+            Rename
+          </button>
+          <div className={`my-1 mx-2 h-px ${S.ctxDivider}`} />
+          <button
+            onClick={() => handleDelete(ctxMenu.doc.id)}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 text-[13px] font-medium bg-transparent border-none cursor-pointer text-left transition-all ${S.ctxDanger}`}
+          >
+            <Trash2 size={13} />
+            Delete file
           </button>
         </div>
+      )}
 
-        {/* Search */}
-        <div className="px-4 mb-3">
-          <div className="relative">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
-            <input
-              className="w-full pl-9 pr-3 py-2 rounded-lg bg-brand-50/80 border border-brand-100 text-[13px] text-gray-700 placeholder:text-gray-400 outline-none transition-all duration-200 focus:border-brand-300 focus:ring-4 focus:ring-brand-700/8"
-              placeholder="Search chats…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-        </div>
+      {/* ── Push sidebar ── */}
+      <aside
+        className={`relative flex-shrink-0 h-full flex flex-col border-r overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${S.bg} ${S.border}`}
+        style={{ width: isOpen ? '260px' : '0px', minWidth: isOpen ? '260px' : '0px' }}
+      >
+        <div className="w-[260px] h-full flex flex-col" style={SG}>
 
-        {error && (
-          <div className="mx-4 mb-2 px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-xs text-red-600 animate-shake">
-            {error}
-          </div>
-        )}
-
-        {/* Section label */}
-        <div className="px-5 pt-2 pb-1.5 text-[10px] font-bold tracking-widest uppercase text-gray-400">
-          History
-        </div>
-
-        {/* Doc/History list */}
-        <div className="flex-1 overflow-y-auto px-2">
-          {loading ? (
-            <div className="px-3 py-6 text-center text-[13px] text-gray-400">Loading…</div>
-          ) : filteredDocs.length === 0 && history.length === 0 ? (
-            <div className="px-3 py-6 text-center text-[13px] text-gray-400">No conversations yet.</div>
-          ) : (
-            <>
-              {filteredDocs.map((doc) => (
-                <div
-                  key={doc.id}
-                  className={`
-                    group flex items-center gap-2.5 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200
-                    ${selectedDocIds.includes(doc.id)
-                      ? 'bg-gradient-to-r from-brand-100 to-brand-50 border-l-[3px] border-brand-700 shadow-sm'
-                      : 'hover:bg-brand-50/60 border-l-[3px] border-transparent'}
-                  `}
-                  onClick={() => { onToggle(doc.id); onMobileClose?.(); }}
-                >
-                  <svg className="shrink-0 text-brand-400" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-                  </svg>
-                  <span className="flex-1 min-w-0 text-[13px] font-medium text-gray-700 truncate" title={doc.originalName}>
-                    {doc.originalName}
-                  </span>
-                  {selectedDocIds.includes(doc.id) && (
-                    <button
-                      className="shrink-0 w-[22px] h-[22px] flex items-center justify-center rounded text-gray-400 bg-transparent border-none cursor-pointer opacity-0 group-hover:opacity-100 transition-all duration-150 hover:text-red-500 hover:bg-red-50"
-                      onClick={(e) => handleDelete(doc.id, e)}
-                      title="Delete"
-                    >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/>
-                      </svg>
-                    </button>
-                  )}
-                </div>
-              ))}
-
-              {history.length > 0 && (
-                <>
-                  <div className="px-3 pt-4 pb-1.5 text-[10px] font-bold tracking-widest uppercase text-gray-400">
-                    Recent
-                  </div>
-                  {history.slice(0, 5).map((chat) => (
-                    <div key={chat._id} className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-gray-500">
-                      <svg className="shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-                      </svg>
-                      <span className="flex-1 min-w-0 text-[13px] truncate">{chat.question}</span>
-                    </div>
-                  ))}
-                </>
-              )}
-            </>
-          )}
-        </div>
-
-        {/* Hidden upload input */}
-        <label>
-          <input
-            ref={fileRef}
-            type="file"
-            accept=".pdf"
-            onChange={handleUpload}
-            disabled={uploading}
-            hidden
-          />
-        </label>
-
-        {/* User Profile Footer */}
-        <div className="mt-auto border-t border-brand-100 px-4 py-3">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand-700 to-accent flex items-center justify-center text-white text-sm font-bold shadow-md shadow-brand-700/30 ring-2 ring-white">
-              {userInitial}
-            </div>
-            <div className="flex-1 min-w-0">
-              <span className="block text-[13px] font-semibold text-gray-800 truncate">{userName}</span>
-              <span className="block text-[11px] text-gray-400 truncate">{userEmail || 'user@example.com'}</span>
-            </div>
-            <button
-              className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg bg-transparent border-none cursor-pointer text-gray-400 transition-all duration-200 hover:bg-red-50 hover:text-red-500"
-              onClick={onLogout}
-              title="Log out"
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
-              </svg>
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 pt-5 pb-4 shrink-0">
+            <span className={`text-[17px] font-bold tracking-tight ${S.title}`}>DocuChat</span>
+            <button onClick={onToggle}
+              className={`w-7 h-7 flex items-center justify-center rounded-lg bg-transparent border-none cursor-pointer transition-all ${S.iconBtn}`}>
+              <PanelLeftClose size={15} />
             </button>
+          </div>
+
+          {/* New Chat */}
+          <div className="px-3 mb-1 shrink-0">
+            <button onClick={onNewChat}
+              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all border-none bg-transparent cursor-pointer text-left ${S.navBtn}`}>
+              <RefreshCw size={14} />
+              New Chat
+            </button>
+          </div>
+
+          {/* Nav */}
+          <div className="px-3 mb-2 flex flex-col gap-0.5 shrink-0">
+            {[
+              { icon: <Settings size={14} />,   label: 'Settings',       action: () => { setNickEdit(nickname); setShowSettings(true); } },
+              { icon: <HelpCircle size={14} />, label: 'Help & Support',  action: () => setShowHelp(true) },
+            ].map(item => (
+              <button key={item.label} onClick={item.action}
+                className={`flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-all border-none bg-transparent cursor-pointer text-left group ${S.navBtn}`}>
+                <span className="flex items-center gap-2.5">{item.icon}{item.label}</span>
+                <ChevronRight size={12} className="opacity-0 group-hover:opacity-60 transition-opacity" />
+              </button>
+            ))}
+          </div>
+
+          <div className={`mx-3 mb-2 h-px shrink-0 ${S.divider}`} />
+
+          {/* Search */}
+          <div className="px-3 mb-2 shrink-0">
+            <div className="relative">
+              <Search size={12} className={`absolute left-3 top-1/2 -translate-y-1/2 opacity-50`} />
+              <input
+                className={`w-full pl-8 pr-3 py-2 rounded-lg border text-[12px] outline-none transition-colors bg-transparent ${S.searchBg} ${S.searchText} ${S.searchFocus}`}
+                style={SG}
+                placeholder="Search documents…"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Scrollable list */}
+          <div className="flex-1 overflow-y-auto px-2 pb-2 min-h-0">
+            {loading ? (
+              <p className={`py-8 text-center text-xs ${S.dimText}`}>Loading…</p>
+            ) : filtered.length === 0 && history.length === 0 ? (
+              <p className={`py-8 text-center text-xs ${S.dimText}`}>No documents yet.</p>
+            ) : (
+              <>
+                {filtered.length > 0 && (
+                  <>
+                    <p className={`px-2 pt-2 pb-1 text-[9px] font-bold tracking-widest uppercase ${S.secLabel}`}>Documents</p>
+                    {filtered.map(doc => (
+                      <div key={doc.id}
+                        onClick={() => { if (renamingId !== doc.id) onSelectDoc(doc.id, doc.originalName); }}
+                        onContextMenu={e => openCtxMenu(e, doc)}
+                        className={`group flex items-center gap-2 px-3 py-2 rounded-xl cursor-pointer transition-all duration-150 text-[12px] select-none ${
+                          selectedDocIds.includes(doc.id) ? S.docActive : S.docIdle
+                        }`}
+                      >
+                        <FileText size={12} className="shrink-0 opacity-70" />
+
+                        {/* Rename inline input */}
+                        {renamingId === doc.id ? (
+                          <input
+                            ref={renameRef}
+                            value={renameValue}
+                            onChange={e => setRenameValue(e.target.value)}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') commitRename(doc.id);
+                              if (e.key === 'Escape') setRenamingId(null);
+                            }}
+                            onBlur={() => commitRename(doc.id)}
+                            onClick={e => e.stopPropagation()}
+                            className={`flex-1 min-w-0 bg-transparent outline-none border-b text-[12px] font-medium ${isDark ? 'border-white/30 text-white' : 'border-black/30 text-[#111]'}`}
+                            style={SG}
+                          />
+                        ) : (
+                          <span className="flex-1 min-w-0 truncate font-medium" title={doc.originalName}>
+                            {doc.originalName}
+                          </span>
+                        )}
+
+                        {/* Right-click hint dot */}
+                        <span className="opacity-0 group-hover:opacity-30 transition-opacity text-[10px]">⋮</span>
+                      </div>
+                    ))}
+                  </>
+                )}
+
+                {Object.entries(grouped).map(([grp, chats]) => (
+                  <div key={grp}>
+                    <p className={`px-2 pt-3 pb-1 text-[9px] font-bold tracking-widest uppercase ${S.secLabel}`}>{grp}</p>
+                    {chats.slice(0, 8).map(chat => (
+                      <div key={chat._id}
+                        className={`flex items-start gap-2 px-3 py-2 rounded-xl cursor-pointer transition-colors ${S.histItem}`}>
+                        <MessageSquare size={11} className="shrink-0 mt-0.5 opacity-70" />
+                        <span className="flex-1 min-w-0 text-[12px] truncate">{chat.question}</span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className={`border-t px-3 py-3 shrink-0 ${S.footerBorder}`}>
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-[#3d9e7a]/20 border border-[#3d9e7a]/30 flex items-center justify-center text-[#3d9e7a] text-sm font-bold shrink-0">
+                {userInitial}
+              </div>
+              <div className="flex-1 min-w-0">
+                <span className={`block text-[12px] font-semibold truncate ${S.userName}`}>{nickname || displayName}</span>
+                <span className={`block text-[10px] truncate ${S.userEmail}`}>{userEmail}</span>
+              </div>
+              <div className="flex items-center gap-0.5">
+                {/* Delete Account */}
+                <button onClick={() => { setDeleteConfirmText(''); setShowDeleteAccount(true); }} title="Delete account"
+                  className={`w-7 h-7 flex items-center justify-center rounded-lg bg-transparent border-none cursor-pointer transition-all ${S.deleteBtn}`}>
+                  <UserMinus size={13} />
+                </button>
+                {/* Logout */}
+                <button onClick={onLogout} title="Log out"
+                  className={`w-7 h-7 flex items-center justify-center rounded-lg bg-transparent border-none cursor-pointer transition-all ${S.logoutBtn}`}>
+                  <LogOut size={13} />
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </aside>
+
+      {/* ── Settings Modal ── */}
+      {showSettings && (
+        <Modal title="Settings" onClose={() => setShowSettings(false)}>
+          <div className="space-y-5">
+            <div>
+              <label className={`block text-[11px] font-semibold uppercase tracking-widest mb-2 ${S.labelText}`}>Display Name / Nickname</label>
+              <div className="flex gap-2">
+                <div className="flex-1 relative">
+                  <Edit3 size={12} className={`absolute left-3 top-1/2 -translate-y-1/2 ${S.dimText.split(' ')[0]}`} />
+                  <input
+                    className={`w-full pl-8 pr-3 py-2.5 rounded-xl border text-[14px] outline-none transition-colors ${S.inputBg} ${S.inputFocus}`}
+                    style={SG}
+                    value={nickEdit}
+                    onChange={e => setNickEdit(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && saveNickname()}
+                    placeholder={displayName}
+                  />
+                </div>
+                <button onClick={saveNickname}
+                  className="px-4 py-2.5 rounded-xl bg-[#3d9e7a] hover:bg-[#4aab8c] text-white text-sm font-semibold transition-all border-none cursor-pointer flex items-center gap-1.5">
+                  {nickSaved ? <Check size={14} /> : 'Save'}
+                </button>
+              </div>
+              <p className={`text-[11px] mt-2 ${S.hintText}`}>This name appears in the greeting and chat UI.</p>
+            </div>
+            <div className={`h-px ${S.divider}`} />
+            <div>
+              <p className={`text-[11px] font-semibold uppercase tracking-widest mb-1.5 ${S.labelText}`}>Account</p>
+              <p className={`text-[13px] ${S.dimText}`}>{userEmail || '—'}</p>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* ── Help Modal ── */}
+      {showHelp && (
+        <Modal title="Help & Support" onClose={() => setShowHelp(false)}>
+          <div className="space-y-5">
+            <div className="p-4 rounded-xl bg-[#3d9e7a]/8 border border-[#3d9e7a]/20">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-[#3d9e7a]/20 flex items-center justify-center shrink-0 mt-0.5">
+                  <Mail size={14} className="text-[#3d9e7a]" />
+                </div>
+                <div>
+                  <p className={`text-[13px] font-semibold mb-1 ${S.modalTitle}`}>Email Us</p>
+                  <p className={`text-[12px] mb-2 ${S.dimText}`}>For queries, feedback or issues:</p>
+                  <a href="mailto:biswabhusan2828@gmail.com" className="text-[13px] text-[#3d9e7a] hover:text-[#4aab8c] font-semibold transition-colors">
+                    biswabhusan2828@gmail.com
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div className={`h-px ${S.divider}`} />
+            <div className="space-y-2">
+              <p className={`text-[11px] font-semibold uppercase tracking-widest mb-3 ${S.labelText}`}>Quick Tips</p>
+              {['Upload a PDF using the Attach button.', 'Right-click a document to rename or delete it.', 'Toggle light/dark mode with the ☀ button.', 'Set a nickname in Settings for a personalised greeting.']
+                .map((tip, i) => (
+                  <div key={i} className={`flex items-start gap-2.5 text-[12px] ${S.dimText}`}>
+                    <span className="text-[#3d9e7a] font-bold shrink-0 mt-0.5">{i + 1}.</span>
+                    {tip}
+                  </div>
+                ))}
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* ── Delete Account Modal ── */}
+      {showDeleteAccount && (
+        <Modal title="Delete Account" onClose={() => setShowDeleteAccount(false)}>
+          <div className="space-y-4">
+            <div className="flex items-start gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20">
+              <AlertTriangle size={18} className="text-red-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-[13px] font-semibold text-red-400 mb-1">This action is irreversible</p>
+                <p className={`text-[12px] ${S.dimText}`}>All your documents, chat history, and account data will be permanently deleted.</p>
+              </div>
+            </div>
+            <div>
+              <label className={`block text-[11px] font-semibold uppercase tracking-widest mb-2 ${S.labelText}`}>
+                Type <span className="text-red-400 font-bold">DELETE</span> to confirm
+              </label>
+              <input
+                className={`w-full px-3 py-2.5 rounded-xl border text-[14px] outline-none transition-colors ${S.inputBg} focus:border-red-500/50`}
+                style={SG}
+                value={deleteConfirmText}
+                onChange={e => setDeleteConfirmText(e.target.value)}
+                placeholder="DELETE"
+              />
+            </div>
+            <div className="flex gap-2.5">
+              <button onClick={() => setShowDeleteAccount(false)}
+                className={`flex-1 py-2.5 rounded-xl text-[14px] font-semibold border-none cursor-pointer transition-all ${isDark ? 'bg-white/8 text-white/70 hover:bg-white/12' : 'bg-black/6 text-[#555] hover:bg-black/10'}`}>
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleteConfirmText !== 'DELETE' || deletingAccount}
+                className="flex-1 py-2.5 rounded-xl text-[14px] font-semibold bg-red-500 hover:bg-red-600 text-white border-none cursor-pointer transition-all disabled:opacity-30 disabled:cursor-not-allowed">
+                {deletingAccount ? 'Deleting…' : 'Delete Forever'}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </>
   );
 }

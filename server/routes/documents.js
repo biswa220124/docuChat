@@ -116,4 +116,21 @@ router.delete('/:id', auth, async (req, res) => {
   }
 });
 
+// PATCH /api/documents/:id — rename a document
+router.patch('/:id', auth, async (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name || !name.trim()) return res.status(400).json({ message: 'Name is required' });
+    const document = await Document.findById(req.params.id);
+    if (!document) return res.status(404).json({ message: 'Document not found' });
+    if (document.userId.toString() !== req.user.id) return res.status(403).json({ message: 'Not authorized' });
+    document.originalName = name.trim();
+    await document.save();
+    res.json({ message: 'Renamed', originalName: document.originalName });
+  } catch (err) {
+    console.error('Rename error:', err.message);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router;
